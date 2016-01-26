@@ -164,6 +164,14 @@ bool CV2PDB::openPDB(const TCHAR* pdbname, const TCHAR* pdbref)
 	rsds->age = pdb->QueryAge();
 	strcpy(rsds->name, pdbnameA);
 
+	// swap to windows path separator
+	char *path = rsds->name;
+	while (*path) {
+		if (*path == '/')
+			*path = '\\';
+		path++;
+	}
+
 	int rc = pdb->CreateDBI("", &dbi);
 	if (rc <= 0 || !dbi)
 		return setError("cannot create DBI");
