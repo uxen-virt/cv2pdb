@@ -138,6 +138,10 @@ bool CV2PDB::openPDB(const TCHAR* pdbname, const TCHAR* pdbref)
 	wchar_t pdbnameW[260]; // = L"c:\\tmp\\aa\\ddoc4.pdb";
 	mbstowcs (pdbnameW, pdbname, 260);
 #endif
+	if (!pdbref && strrchr(pdbnameA, '\\'))
+		pdbnameA = strrchr(pdbnameA, '\\') + 1;
+	if (!pdbref && strrchr(pdbnameA, '/'))
+		pdbnameA = strrchr(pdbnameA, '/') + 1;
 
 	if (!initMsPdb ())
 		return setError("cannot load PDB helper DLL");
