@@ -142,6 +142,11 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 		memset(&debugdir, 0, sizeof(debugdir));
 	int xdatalen = datalen + sizeof(debugdir);
 
+	if (hdr64)
+		debugdir.TimeDateStamp = hdr64->FileHeader.TimeDateStamp;
+	else if (hdr32)
+		debugdir.TimeDateStamp = hdr32->FileHeader.TimeDateStamp;
+
 	// assume there is place for another section because of section alignment
 	int s;
 	DWORD lastVirtualAddress = 0;
