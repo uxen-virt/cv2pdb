@@ -1,0 +1,44 @@
+#
+# Copyright 2020, HP Inc.
+# Author: Christian Limpach <Christian.Limpach@gmail.com>
+# SPDX-License-Identifier: ISC
+#
+
+TARGET = cv2pdb
+
+all: $(TARGET)
+
+#CC = x86_64-w64-mingw32-gcc
+#CXX = i686-w64-mingw32-g++
+CXX = x86_64-w64-mingw32-g++
+
+CXXFLAGS += -O3 -std=c++11 -g
+CXXFLAGS += -fno-strict-aliasing
+CXXFLAGS += -fno-devirtualize -fno-devirtualize-speculatively
+
+#CXXFLAGS += -Wall -Werror
+#CXXFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
+
+CPPFLAGS +=
+
+LDFLAGS += -std=c++11 -static-libgcc -static-libstdc++ -g
+
+OBJS = PEImage.o \
+       cv2pdb.o \
+       cvutil.o \
+       demangle.o \
+       dwarf2pdb.o \
+       dwarflines.o \
+       main.o \
+       mspdb.o \
+       readDwarf.o \
+       symutil.o
+
+$(TARGET): $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+#%.o: %.cpp
+#	$(CXX) $(CFLAGS) -c $< -o $@
+
+clean:
+	@rm -f $(OBJS) $(TARGET) $(TARGET).exe
