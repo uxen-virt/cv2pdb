@@ -9,6 +9,9 @@
 #include "symutil.h"
 
 #include <direct.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 double
 #include "../VERSION"

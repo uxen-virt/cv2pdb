@@ -12,13 +12,15 @@
  *	Frits van Bommel
  */
 
+#include <stdio.h>
+
 #include <string>
 #include <ctype.h>
 #include <assert.h>
 
 #include "symutil.h"
 
-#ifdef _M_X64
+#if !defined(__GNUC__) && defined(_M_X64)
 extern "C" void cvt80to64(void * in, long double * out);
 #endif
 
@@ -462,6 +464,7 @@ public:
 			p[i] = b;
 		}
 		// extract 10-byte double from rdata
+#if !defined(__GNUC__)
 #ifdef _M_X64
 		cvt80to64(rdata, &r);
 #else
@@ -469,6 +472,12 @@ public:
 			fld TBYTE PTR rdata;
 			fstp r;
 		}
+#endif
+#else
+                asm ("fld %1    \n"
+                     "fstp %0   \n"
+                     : "=m" (r)
+                     : "m" (rdata[0]));
 #endif
 
 		char num[30];

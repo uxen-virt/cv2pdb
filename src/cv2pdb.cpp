@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <direct.h>
+#include <climits>
 
 #define REMOVE_LF_DERIVED  1  // types wrong by DMD
 #define PRINT_INTERFACEVERSON 0
@@ -1498,9 +1499,9 @@ const char* CV2PDB::appendAssocArray(int keyType, int elemType)
 	char keyname[kMaxNameLen];
 	char elemname[kMaxNameLen];
 	if(!nameOfType(keyType, keyname, sizeof(keyname)))
-		return false;
+		return NULL;
 	if(!nameOfType(elemType, elemname, sizeof(elemname)))
-		return false;
+		return NULL;
 
 	sprintf(name, "internal@aaA<%s,%s>", keyname, elemname);
 

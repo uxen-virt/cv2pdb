@@ -12,6 +12,9 @@ extern "C" {
 }
 
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 char dotReplacementChar = '@';
 bool demangleSymbols = true;

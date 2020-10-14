@@ -13,12 +13,12 @@
 HMODULE modMsPdb;
 mspdb::fnPDBOpen2W *pPDBOpen2W;
 
-char* mspdb80_dll = "mspdb80.dll";
-char* mspdb100_dll = "mspdb100.dll";
-char* mspdb110_dll = "mspdb110.dll";
-char* mspdb120_dll = "mspdb120.dll";
-char* mspdb140_dll = "mspdb140.dll";
-// char* mspdb110shell_dll = "mspdbst.dll"; // the VS 2012 Shell uses this file instead of mspdb110.dll, but is missing mspdbsrv.exe
+const char* mspdb80_dll = "mspdb80.dll";
+const char* mspdb100_dll = "mspdb100.dll";
+const char* mspdb110_dll = "mspdb110.dll";
+const char* mspdb120_dll = "mspdb120.dll";
+const char* mspdb140_dll = "mspdb140.dll";
+// const char* mspdb110shell_dll = "mspdbst.dll"; // the VS 2012 Shell uses this file instead of mspdb110.dll, but is missing mspdbsrv.exe
 
 int mspdb::vsVersion = 8;
 

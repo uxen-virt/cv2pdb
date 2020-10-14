@@ -7,6 +7,7 @@
 #ifndef __MSPDB_H__
 #define __MSPDB_H__
 
+#include <windows.h> // GUID
 #include <stdio.h>
 
 namespace mspdb
@@ -36,6 +37,14 @@ struct TPI;
 struct IPI;
 struct NameMap;
 struct EnumNameMap;
+
+enum EnumType { };
+enum DEPON { };
+enum YNM { };
+enum TrgType { };
+enum PCC { };
+enum DBGTYPE { };
+enum DOVC { };
 
 #define MRECmp MRECmp2
 #define PDBCommon PDB
@@ -249,28 +258,28 @@ struct PDB
 public: 
 	static int __cdecl Open2W(unsigned short const *path,char const *mode,long *p,unsigned short *ext,unsigned int flags,struct PDB **pPDB);
 
-	unsigned long QueryAge() { return vs10.QueryAge(); }
-	int CreateDBI(char const *n,struct DBI * *pdbi) { return vs10.CreateDBI(n, pdbi); }
-	int OpenTpi(char const *n,struct TPI * *ptpi)  { return vs10.OpenTpi(n, ptpi); }
-	long QueryLastError(char * const lastErr) { return vs10.QueryLastError(lastErr); }
+	unsigned long QueryAge() { PDB_VS10 *p = &vs10; return p->QueryAge(); }
+	int CreateDBI(char const *n,struct DBI * *pdbi) { PDB_VS10 *p = &vs10; return p->CreateDBI(n, pdbi); }
+	int OpenTpi(char const *n,struct TPI * *ptpi)  { PDB_VS10 *p = &vs10; return p->OpenTpi(n, ptpi); }
+	long QueryLastError(char * const lastErr) { PDB_VS10 *p = &vs10; return p->QueryLastError(lastErr); }
 
 	int Commit()
 	{
 		if(vsVersion >= 11)
 			return ((PDB_VS11*)&vs10)->Commit();
-		return vs10.Commit();
+		PDB_VS10 *p = &vs10; return p->Commit();
 	}
 	int Close()
 	{
 		if(vsVersion >= 11)
 			return ((PDB_VS11*)&vs10)->Close();
-		return vs10.Close();
+		PDB_VS10 *p = &vs10; return p->Close();
 	}
 	int QuerySignature2(struct _GUID *guid)
 	{
 		if(vsVersion >= 11)
 			return ((PDB_VS11*)&vs10)->QuerySignature2(guid);
-		return vs10.QuerySignature2(guid);
+		PDB_VS10 *p = &vs10; return p->QuerySignature2(guid);
 	}
 };
 
@@ -325,15 +334,19 @@ struct TypeChunk
 	unsigned short len;
 	unsigned short type;
 
+#if 0 /* an anonymous union can only have non-static data members */
 	union
 	{
+#endif
 		struct _refpdb // type 0x1515
 		{
 			unsigned int md5[4];
 			unsigned int unknown;
 			unsigned pdbname[1];
 		} refpdb;
+#if 0
 	};
+#endif
 };
 
 struct TypeData
@@ -461,23 +474,24 @@ struct DBI
 {
     DBI_VS9 vs9;
 
-    unsigned long QueryImplementationVersion() { return vs9.QueryImplementationVersion(); }
-    unsigned long QueryInterfaceVersion() { return vs9.QueryInterfaceVersion(); }
-    int Close() { return vs9.Close(); }
-    int OpenMod(char const *objName,char const *libName,struct Mod * *pmod) { return vs9.OpenMod(objName,libName,pmod); }
-    int AddSec(unsigned short sec,unsigned short flags,long offset,long cbseg) { return vs9.AddSec(sec,flags,offset,cbseg); }
+    unsigned long QueryImplementationVersion() { DBI_VS9 *p = &vs9; return p->QueryImplementationVersion(); }
+    unsigned long QueryInterfaceVersion() { DBI_VS9 *p = &vs9; return p->QueryInterfaceVersion(); }
+    int Close() { DBI_VS9 *p = &vs9;
+        return p->Close(); }
+    int OpenMod(char const *objName,char const *libName,struct Mod * *pmod) { DBI_VS9 *p = &vs9; return p->OpenMod(objName,libName,pmod); }
+    int AddSec(unsigned short sec,unsigned short flags,long offset,long cbseg) { DBI_VS9 *p = &vs9; return p->AddSec(sec,flags,offset,cbseg); }
 
     int AddPublic2(char const *name,unsigned short sec,long off,unsigned long type)
     {
         if(vsVersion >= 10)
             return ((DBI_VS10*) &vs9)->AddPublic2(name, sec, off, type);
-        return vs9.AddPublic2(name, sec, off, type);
+        DBI_VS9 *p = &vs9; return p->AddPublic2(name, sec, off, type);
     }
     void SetMachineType(unsigned short type)
     {
         if(vsVersion >= 10)
             return ((DBI_VS10*) &vs9)->SetMachineType(type);
-        return vs9.SetMachineType(type);
+        DBI_VS9 *p = &vs9; return p->SetMachineType(type);
     }
 };
 

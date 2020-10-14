@@ -29,8 +29,7 @@ void CV2PDB::checkDWARFTypeAlloc(int size, int add)
 		//allocDwarfTypes += size + add;
 		allocDwarfTypes += allocDwarfTypes/2 + size + add;
 		dwarfTypes = (BYTE*) realloc(dwarfTypes, allocDwarfTypes);
-		if (dwarfTypes == nullptr)
-			__debugbreak();
+		assert (dwarfTypes != nullptr);
 	}
 }
 
