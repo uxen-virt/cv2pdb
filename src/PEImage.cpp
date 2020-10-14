@@ -29,12 +29,17 @@ extern "C" {
 
 ///////////////////////////////////////////////////////////////////////
 PEImage::PEImage(const TCHAR* iname)
-: dump_base(0)
+: fd(-1)
+, dump_base(0)
 , dump_total_len(0)
-, dirHeader(0)
 , hdr32(0)
 , hdr64(0)
-, fd(-1)
+, dirHeader(0)
+, nsec(0)
+, nsym(0)
+, symtable(0)
+, strtable(0)
+, bigobj(false)
 , debug_aranges(0)
 , debug_pubnames(0)
 , debug_pubtypes(0)
@@ -45,14 +50,9 @@ PEImage::PEImage(const TCHAR* iname)
 , debug_str(0)
 , debug_loc(0), debug_loc_length(0)
 , debug_ranges(0), debug_ranges_length(0)
-, codeSegment(0)
-, linesSegment(-1)
 , reloc(0), reloc_length(0)
-, nsec(0)
-, nsym(0)
-, symtable(0)
-, strtable(0)
-, bigobj(false)
+, linesSegment(-1)
+, codeSegment(0)
 {
 	if(iname)
 		loadExe(iname);
@@ -280,7 +280,7 @@ bool PEImage::initCVPtr(bool initDbgDir)
 		return setError("too few entries in data directory");
 
 	unsigned int i;
-	int found = false;
+	/* int found = false; */
 	for(i = 0; i < IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].Size)/sizeof(IMAGE_DEBUG_DIRECTORY); i++)
 	{
 		int off = IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress) + i*sizeof(IMAGE_DEBUG_DIRECTORY);
@@ -510,7 +510,7 @@ struct LineInfoData
     int funcsiz;
     int srcfileoff;
     int npairs;
-    int size;
+    unsigned int size;
 };
 
 struct LineInfoPair
@@ -613,20 +613,20 @@ int PEImage::dumpDebugLineInfoOMF()
         case 0x95: // LINNUM
         {
             const unsigned char* q = p + 3;
-            int basegrp = _getIndex(q);
+            /* int basegrp = */ _getIndex(q);
             int baseseg = _getIndex(q);
             unsigned num = (p + *(unsigned short*)(p + 1) + 2 - q) / 6;
             const unsigned char* fn = fname;
             int flen = fn ? _pstrlen(fn) : 0;
             printf("File: %.*s, BaseSegment %d\n", flen, fn, baseseg);
-            for (int i = 0; i < num; i++)
+            for (unsigned i = 0; i < num; i++)
                 printf("\tOff 0x%x: Line %d\n", *(int*)(q + 2 + 6 * i), *(unsigned short*)(p + 6 * i));
             break;
         }
         case 0xc5: // LINSYM
         {
             const unsigned char* q = p + 3;
-            unsigned flags = *q++;
+            /* unsigned flags = * */ q++;
             unsigned pubname = _getIndex(q);
             unsigned num = (p + *(unsigned short*)(p + 1) + 2 - q) / 6;
             if (num == 0)

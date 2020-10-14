@@ -114,8 +114,8 @@ struct DWARF_CompilationUnit
 	unsigned int debug_abbrev_offset; // 8 byte in DWARF-64
 	byte address_size;
 
-	bool isDWARF64() const { return unit_length == ~0; }
-	int refSize() const { return unit_length == ~0 ? 8 : 4; }
+	bool isDWARF64() const { return unit_length == ~0U; }
+	int refSize() const { return unit_length == ~0U ? 8 : 4; }
 };
 
 struct DWARF_FileName
@@ -256,7 +256,7 @@ struct DWARF_LineState
 	// not part of the "documented" state
 	DWARF_FileName* file_ptr;
 	unsigned long seg_offset;
-	unsigned long section;
+	/* unsigned */ long section;
 	unsigned long last_addr;
 	std::vector<mspdb::LineInfoEntry> lineInfo;
 

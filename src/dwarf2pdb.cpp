@@ -327,7 +327,7 @@ public:
 		if(ptr >= end)
 			return false;
 		byte instr = *ptr++;
-		int reg, off;
+		/* int reg, off; */
 
 		switch(instr & 0xc0)
 		{
@@ -335,11 +335,11 @@ public:
 				loc += (instr & 0x3f) * entry.code_alignment_factor;
 				break;
 			case DW_CFA_offset:
-				reg = instr & 0x3f; // set register rule to "factored offset"
-				off = LEB128(ptr) * entry.data_alignment_factor;
+				/* reg = instr & 0x3f; */ // set register rule to "factored offset"
+				/* off = */ LEB128(ptr) /* * entry.data_alignment_factor */;
 				break;
 			case DW_CFA_restore:
-				reg = instr & 0x3f; // restore register to initial state
+				/* reg = instr & 0x3f; */ // restore register to initial state
 				break;
 
 			case DW_CFA_extended:
@@ -387,35 +387,35 @@ public:
 			}
 
 			case DW_CFA_undefined:
-				reg = LEB128(ptr); // set register rule to "undefined"
+				/* reg = */ LEB128(ptr); // set register rule to "undefined"
 				break;
 			case DW_CFA_same_value:
-				reg = LEB128(ptr); // set register rule to "same value"
+				/* reg = */ LEB128(ptr); // set register rule to "same value"
 				break;
 			case DW_CFA_offset_extended:
-				reg = LEB128(ptr); // set register rule to "factored offset"
-				off = LEB128(ptr) * entry.data_alignment_factor;
+				/* reg = */ LEB128(ptr); // set register rule to "factored offset"
+				/* off = */ LEB128(ptr) /* * entry.data_alignment_factor */;
 				break;
 			case DW_CFA_offset_extended_sf:
-				reg = LEB128(ptr); // set register rule to "factored offset"
-				off = SLEB128(ptr) * entry.data_alignment_factor;
+				/* reg = */ LEB128(ptr); // set register rule to "factored offset"
+				/* off = */ SLEB128(ptr) /* * entry.data_alignment_factor */;
 				break;
 			case DW_CFA_val_offset:
-				reg = LEB128(ptr); // set register rule to "val offset"
-				off = LEB128(ptr) * entry.data_alignment_factor;
+				/* reg = */ LEB128(ptr); // set register rule to "val offset"
+				/* off = */ LEB128(ptr) /* * entry.data_alignment_factor */;
 				break;
 			case DW_CFA_val_offset_sf:
-				reg = LEB128(ptr); // set register rule to "val offset"
-				off = SLEB128(ptr) * entry.data_alignment_factor;
+				/* reg = */ LEB128(ptr); // set register rule to "val offset"
+				/* off = */ SLEB128(ptr) /* * entry.data_alignment_factor */;
 				break;
 			case DW_CFA_register:
-				reg = LEB128(ptr); // set register rule to "register"
-				reg = LEB128(ptr);
+				/* reg = */ LEB128(ptr); // set register rule to "register"
+				/* reg = */ LEB128(ptr);
 				break;
 			case DW_CFA_expression:
 			case DW_CFA_val_expression:
 			{
-				reg = LEB128(ptr); // set register rule to "expression"
+				/* reg = */ LEB128(ptr); // set register rule to "expression"
 				DWARF_Attribute attr;
 				attr.type = Block;
 				attr.block.len = LEB128(ptr);
@@ -425,7 +425,7 @@ public:
 				break;
 			}
 			case DW_CFA_restore_extended:
-				reg = LEB128(ptr); // restore register to initial state
+				/* reg = */ LEB128(ptr); // restore register to initial state
 				break;
 
 			case DW_CFA_remember_state:
@@ -710,9 +710,9 @@ bool CV2PDB::addDWARFProc(DWARF_InfoData& procid, DWARF_CompilationUnit* cu, DIE
 
 	if (cu)
 	{
-		bool endarg = false;
+		/* bool endarg = false; */
 		DWARF_InfoData id;
-		int off = 8;
+		/* int off = 8; */
 
 		DIECursor prev = cursor;
 		while (cursor.readNext(id, true) && id.tag == DW_TAG_formal_parameter)
@@ -806,7 +806,7 @@ int CV2PDB::addDWARFStructure(DWARF_InfoData& structid, DWARF_CompilationUnit* c
 #endif
         // cursor points to the first member
 		DWARF_InfoData id;
-		int len = 0;
+		/* int len = 0; */
 		while (cursor.readNext(id, true))
 		{
 			int cvid = -1;
@@ -885,7 +885,7 @@ int CV2PDB::getDWARFArrayBounds(DWARF_InfoData& arrayid, DWARF_CompilationUnit* 
 		DWARF_InfoData id;
 		while (cursor.readNext(id, true))
 		{
-			int cvid = -1;
+			/* int cvid = -1; */
 			if (id.tag == DW_TAG_subrange_type)
 			{
 				lowerBound = id.lower_bound;
@@ -900,7 +900,7 @@ int CV2PDB::getDWARFArrayBounds(DWARF_InfoData& arrayid, DWARF_CompilationUnit* 
 int CV2PDB::addDWARFArray(DWARF_InfoData& arrayid, DWARF_CompilationUnit* cu,
 						  DIECursor cursor)
 {
-	int upperBound, lowerBound = getDWARFArrayBounds(arrayid, cu, cursor, upperBound);
+	int upperBound = 0, lowerBound = getDWARFArrayBounds(arrayid, cu, cursor, upperBound);
 
 	checkUserTypeAlloc(kMaxNameLen + 100);
 	codeview_type* cvt = (codeview_type*) (userTypes + cbUserTypes);
@@ -985,7 +985,7 @@ bool CV2PDB::addDWARFSectionContrib(mspdb::Mod* mod, unsigned long pclo, unsigne
 
 int CV2PDB::addDWARFBasicType(const char*name, int encoding, int byte_size)
 {
-	int type = 0, mode = 0, size = 0;
+	int type = 0, /* mode = 0, */ size = 0;
 	switch(encoding)
 	{
 	case DW_ATE_boolean:        type = 3; break;
@@ -1076,7 +1076,7 @@ int CV2PDB::getDWARFTypeSize(DWARF_CompilationUnit* cu, byte* typePtr)
 			return cu->address_size;
 		case DW_TAG_array_type:
 		{
-			int upperBound, lowerBound = getDWARFArrayBounds(id, cu, cursor, upperBound);
+			int upperBound = 0, lowerBound = getDWARFArrayBounds(id, cu, cursor, upperBound);
 			return (upperBound + lowerBound + 1) * getDWARFTypeSize(cu, id.type);
 		}
 		default:
@@ -1221,7 +1221,7 @@ bool CV2PDB::createTypes()
 				if (id.name && id.pclo && id.pchi)
 				{
 					addDWARFProc(id, cu, cursor.getSubtreeCursor());
-					int rc = mod->AddPublic2(id.name, img.codeSegment + 1, id.pclo - codeSegOff, 0);
+					/* int rc = */ mod->AddPublic2(id.name, img.codeSegment + 1, id.pclo - codeSegOff, 0);
 				}
 				break;
 
@@ -1278,7 +1278,7 @@ bool CV2PDB::createTypes()
 					{
 						int type = getTypeByDWARFPtr(cu, id.type);
 						appendGlobalVar(id.name, type, seg + 1, segOff);
-						int rc = mod->AddPublic2(id.name, seg + 1, segOff, type);
+						/* int rc = */ mod->AddPublic2(id.name, seg + 1, segOff, type);
 					}
 				}
 				break;
@@ -1401,7 +1401,7 @@ bool CV2PDB::addDWARFPublics()
 {
 	mspdb::Mod* mod = globalMod();
 
-	int type = 0;
+	/* int type = 0; */
 	int rc = mod->AddPublic2("public_all", img.codeSegment + 1, 0, 0x1000);
 	if (rc <= 0)
 		return setError("cannot add public");

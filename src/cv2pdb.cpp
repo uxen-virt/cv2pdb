@@ -17,20 +17,19 @@
 #define PRINT_INTERFACEVERSON 0
 
 CV2PDB::CV2PDB(PEImage& image)
-: img(image), pdb(0), dbi(0), libraries(0), rsds(0), modules(0), globmod(0)
+: libraries(0), img(image), pdb(0), dbi(0), modules(0), globmod(0), rsds(0)
 , segMap(0), segMapDesc(0), segFrame2Index(0), globalTypeHeader(0)
 , globalTypes(0), cbGlobalTypes(0), allocGlobalTypes(0)
-, userTypes(0), cbUserTypes(0), allocUserTypes(0)
+, userTypes(0), pointerTypes(0), cbUserTypes(0), allocUserTypes(0)
 , globalSymbols(0), cbGlobalSymbols(0), staticSymbols(0), cbStaticSymbols(0)
 , udtSymbols(0), cbUdtSymbols(0), allocUdtSymbols(0)
 , dwarfTypes(0), cbDwarfTypes(0), allocDwarfTypes(0)
-, srcLineStart(0), srcLineSections(0)
-, pointerTypes(0)
-, Dversion(2)
-, debug(false)
+, emptyFieldListType(0)
 , classEnumType(0), ifaceEnumType(0), cppIfaceEnumType(0), structEnumType(0)
 , classBaseType(0), ifaceBaseType(0), cppIfaceBaseType(0), structBaseType(0)
-, emptyFieldListType(0)
+, debug(false)
+, srcLineSections(0), srcLineStart(0)
+, Dversion(2)
 {
 	memset(typedefs, 0, sizeof(typedefs));
 	memset(translatedTypedefs, 0, sizeof(translatedTypedefs));
@@ -361,7 +360,7 @@ int CV2PDB::_doFields(int cmd, codeview_reftype* dfieldlist, const codeview_reft
 	int test_nested_type = (cmd == kCmdNestedTypes ? arg : 0);
 
 	int cntFields = 0;
-	int prev = pos;
+	/* int prev = pos; */
 	while (pos < len && !hadError())
 	{
 		if (p[pos] >= 0xf1)       /* LF_PAD... */
@@ -375,7 +374,7 @@ int CV2PDB::_doFields(int cmd, codeview_reftype* dfieldlist, const codeview_reft
 			break;
 		}
 
-		prev = pos;
+		/* prev = pos; */
 		const codeview_fieldtype* fieldtype = (const codeview_fieldtype*)(p + pos);
 		codeview_fieldtype* dfieldtype = (codeview_fieldtype*)(dp + dpos);
 		int copylen = 0;
@@ -936,7 +935,7 @@ int CV2PDB::findMemberFunctionType(codeview_symbol* lastGProcSym, int thisPtrTyp
 	if (!thisPtrData || thisPtrData->generic.id != LF_POINTER_V1)
 		return lastGProcSym->proc_v2.proctype;
 
-	int thistype = thisPtrData->pointer_v1.datatype;
+	/* int thistype = thisPtrData->pointer_v1.datatype; */
 
 	// search method with same arguments and return type
 	DWORD* offset = (DWORD*)(globalTypeHeader + 1);
@@ -988,7 +987,7 @@ int CV2PDB::sizeofClassType(const codeview_type* cvtype)
 		cvtype = findCompleteClassType(cvtype);
 
 	int value;
-	int leaf_len = numeric_leaf(&value, &cvtype->struct_v1.structlen);
+	/* int leaf_len = */ numeric_leaf(&value, &cvtype->struct_v1.structlen);
 	return value;
 }
 
@@ -1563,13 +1562,13 @@ const char* CV2PDB::appendAssocArray(int keyType, int elemType)
 	dtype = (codeview_type*) (userTypes + cbUserTypes);
 	cbUserTypes += addClass(dtype, len2 == 0 ? 4 : 5, fieldListType, 0, 0, 0, off, name);
 	addUdtSymbol(nextUserType, name);
-	int completeAAAType = nextUserType++;
+	/* int completeAAAType = */ nextUserType++;
 
 	// struct BB {
 	//    aaA*[] b;
 	//    size_t nodes;	// total number of aaA nodes
 	// };
-	const char* dynArray = appendDynamicArray(0x74, aaAPtrType);
+	/* const char* dynArray = */ appendDynamicArray(0x74, aaAPtrType);
 	int dynArrType = nextUserType - 1;
 
 	// field list (aaA*[] b, size_t nodes)
@@ -2023,7 +2022,7 @@ void CV2PDB::appendTypedefs()
 
 bool CV2PDB::initGlobalTypes()
 {
-	int object_derived_type = 0;
+	/* int object_derived_type = 0; */
 	for (int m = 0; m < countEntries; m++)
 	{
 		OMFDirEntry* entry = img.getCVEntry(m);
@@ -2183,9 +2182,11 @@ bool CV2PDB::initGlobalTypes()
 
 					ensureUDT(t, type);
 					// remember type index of derived list for object.Object
+#if 0
 					if (Dversion > 0 && dtype->struct_v2.derived)
 						if (memcmp((char*) &type->struct_v1.structlen + leaf_len, "\x0dobject.Object", 14) == 0)
 							object_derived_type = type->struct_v1.derived;
+#endif
 					break;
 
 				case LF_UNION_V1:
@@ -2553,8 +2554,8 @@ bool CV2PDB::createSrcLineBitmap()
 		{
 			// mark the beginning of each line
 			OMFSourceModule* sourceModule = img.CVP<OMFSourceModule>(entry->lfo);
-			int* segStartEnd = img.CVP<int>(entry->lfo + 4 + 4 * sourceModule->cFile);
-			short* seg = img.CVP<short>(entry->lfo + 4 + 4 * sourceModule->cFile + 8 * sourceModule->cSeg);
+			/* int* segStartEnd = img.CVP<int>(entry->lfo + 4 + 4 * sourceModule->cFile); */
+			/* short* seg = img.CVP<short>(entry->lfo + 4 + 4 * sourceModule->cFile + 8 * sourceModule->cSeg); */
 
 			for (int f = 0; f < sourceModule->cFile; f++)
 			{
@@ -2566,7 +2567,7 @@ bool CV2PDB::createSrcLineBitmap()
 				{
 					int lnoff = entry->lfo + sourceFile->baseSrcLn[s];
 					OMFSourceLine* sourceLine = img.CVP<OMFSourceLine> (lnoff);
-					short* lineNo = img.CVP<short> (lnoff + 4 + 4 * sourceLine->cLnOff);
+					/* short* lineNo = img.CVP<short> (lnoff + 4 + 4 * sourceLine->cLnOff); */
 
 					int cnt = sourceLine->cLnOff;
 					int segIndex = segFrame2Index[sourceLine->Seg];
@@ -2632,8 +2633,8 @@ bool CV2PDB::addSrcLines()
 				return setError("sstSrcModule for non-existing module");
 
 			OMFSourceModule* sourceModule = img.CVP<OMFSourceModule>(entry->lfo);
-			int* segStartEnd = img.CVP<int>(entry->lfo + 4 + 4 * sourceModule->cFile);
-			short* seg = img.CVP<short>(entry->lfo + 4 + 4 * sourceModule->cFile + 8 * sourceModule->cSeg);
+			/* int* segStartEnd = img.CVP<int>(entry->lfo + 4 + 4 * sourceModule->cFile); */
+			/* short* seg = img.CVP<short>(entry->lfo + 4 + 4 * sourceModule->cFile + 8 * sourceModule->cSeg); */
 
 			for (int f = 0; f < sourceModule->cFile; f++)
 			{
@@ -2902,7 +2903,7 @@ int CV2PDB::copySymbols(BYTE* srcSymbols, int srcSize, BYTE* destSymbols, int de
 			break;
 		case S_COMPILAND_V1:
 			if (((dsym->compiland_v1.unknown >> 8) & 0xFF) == 0) // C?
-				dsym->compiland_v1.unknown = (dsym->compiland_v1.unknown & ~0xFF00 | 0x100); // C++
+				dsym->compiland_v1.unknown = ((dsym->compiland_v1.unknown & ~0xFF00) | 0x100); // C++
 			break;
 		case S_PROCREF_V1:
 		case S_DATAREF_V1:
@@ -3090,7 +3091,7 @@ bool CV2PDB::addSymbols()
 	for (int m = 0; m < countEntries; m++)
 	{
 		OMFDirEntry* entry = img.getCVEntry(m);
-		mspdb::Mod* mod = 0;
+		/* mspdb::Mod* mod = 0; */
 		BYTE* symbols = img.CVP<BYTE>(entry->lfo);
 
 		switch(entry->SubSection)

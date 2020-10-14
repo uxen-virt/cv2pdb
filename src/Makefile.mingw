@@ -16,8 +16,7 @@ CXXFLAGS += -O3 -std=c++11 -g
 CXXFLAGS += -fno-strict-aliasing
 CXXFLAGS += -fno-devirtualize -fno-devirtualize-speculatively
 
-#CXXFLAGS += -Wall -Werror
-#CXXFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
+CXXFLAGS += -Wall -Werror
 
 CPPFLAGS +=
 

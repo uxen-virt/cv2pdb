@@ -231,7 +231,7 @@ public:
 				if (ni != nisave + i)
 					err = true;
 			}
-			catch (MangleException me)
+			catch (MangleException *me)
 			{
 				err = true;
 			}
@@ -265,7 +265,7 @@ public:
 	{
 		//writefln("parseType() %d", ni);
 		int isdelegate = 0;
-		bool hasthisptr = false; /// For function/delegate types: expects a 'this' pointer as last argument
+		/* bool hasthisptr = false; */ /// For function/delegate types: expects a 'this' pointer as last argument
 	Lagain:
 		if (ni >= name.length)
 			error();
@@ -321,7 +321,7 @@ public:
 			goto Lagain;
 
 		case 'M':
-			hasthisptr = true;
+			/* hasthisptr = true; */
 			goto Lagain;
 
 		case 'y':
@@ -481,7 +481,10 @@ public:
 #endif
 
 		char num[30];
-		sprintf(num, "%g", r);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+		sprintf(num, "%lg", r);
+#pragma GCC diagnostic pop
 		result += num; // format(r);
 		ni += 10 * 2;
 	}
@@ -621,7 +624,7 @@ public:
 				goto Lnot;
 			return result;
 		}
-		catch (MangleException e)
+		catch (MangleException *e)
 		{
 		}
 
@@ -656,7 +659,7 @@ void unittest()
 	};
 
 	Demangle d;
-	for(int i = 0; i < sizeof(table)/sizeof(table[0]); i++)
+	for(unsigned int i = 0; i < sizeof(table)/sizeof(table[0]); i++)
 	{
 		string r = d.demangle(table[i][0]);
 		assert(r == table[i][1]);

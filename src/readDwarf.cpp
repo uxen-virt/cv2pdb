@@ -49,8 +49,8 @@ Location decodeLocation(const DWARF_Attribute& attr, const Location* frameBase, 
 	byte* p = attr.expr.ptr;
 	Location stack[256];
 	int stackDepth = 0;
-    if (at == DW_AT_data_member_location)
-        stack[stackDepth++] = Location { Location::Abs, 0, 0 };
+        if (at == DW_AT_data_member_location)
+                stack[stackDepth++] = Location { Location::Abs, 0, 0 };
 
 	for (;;)
 	{
@@ -523,7 +523,7 @@ byte* DIECursor::getDWARFAbbrev(unsigned off, unsigned findcode)
 	byte* end = (byte*)img->debug_abbrev + img->debug_abbrev_length;
 	while (p < end)
 	{
-		int code = LEB128(p);
+		unsigned int code = LEB128(p);
 		if (code == findcode)
 		{
 			abbrevMap.insert(std::make_pair(key, p));
@@ -532,8 +532,8 @@ byte* DIECursor::getDWARFAbbrev(unsigned off, unsigned findcode)
 		if (code == 0)
 			return 0;
 
-		int tag = LEB128(p);
-		int hasChild = *p++;
+		/* int tag = */ LEB128(p);
+		/* int hasChild = * */ p++;
 
 		// skip attributes
 		int attr, form;

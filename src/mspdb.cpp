@@ -8,7 +8,9 @@
 
 #include <windows.h>
 
+#if defined(_MSC_VER)
 #pragma comment(lib, "rpcrt4.lib")
+#endif
 
 HMODULE modMsPdb;
 mspdb::fnPDBOpen2W *pPDBOpen2W;

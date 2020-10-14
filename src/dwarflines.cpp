@@ -23,12 +23,14 @@ bool isRelativePath(const std::string& s)
 	return true;
 }
 
+#if 0
 static int cmpAdr(const void* s1, const void* s2)
 {
 	const mspdb::LineInfoEntry* e1 = (const mspdb::LineInfoEntry*) s1;
 	const mspdb::LineInfoEntry* e2 = (const mspdb::LineInfoEntry*) s2;
 	return e1->offset - e2->offset;
 }
+#endif
 
 
 bool printLines(char const *fname, unsigned short sec, char const *secname, 
