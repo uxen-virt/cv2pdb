@@ -288,6 +288,17 @@ bool PEImage::initCVPtr(bool initDbgDir)
 		OMFSignature* sig = DPV<OMFSignature>(cv_base, dbgDir->SizeOfData);
 		if (!sig)
 			return setError("invalid debug data base address and size");
+		if (memcmp(sig->Signature, "RSDS", 4) == 0)
+		{
+			// binutils emits a debug directory with debug info type RSDS,
+			// which we'll ignore/replace with a new one
+			OMFSignatureRSDS* rsds_sig = (OMFSignatureRSDS*)sig;
+			if (rsds_sig->name[0]) // warn if there is a filename
+				fprintf(stderr, "ignoring PDB file %s\n", rsds_sig->name);
+			dirHeader = 0;
+			dirEntry = 0;
+			return false;
+		}
 		if (memcmp(sig->Signature, "NB09", 4) != 0 && memcmp(sig->Signature, "NB11", 4) != 0)
 		{
 			// return setError("can only handle debug info of type NB09 and NB11");
