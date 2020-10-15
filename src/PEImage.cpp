@@ -153,7 +153,12 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 	int cntSections = countSections();
 	for(s = 0; s < cntSections; s++)
 	{
-		const char* name = (const char*) sec[s].Name;
+		// NUL terminate name
+		char _name[IMAGE_SIZEOF_SHORT_NAME + 1];
+		const char* name = _name;
+		memcpy(_name, sec[s].Name, IMAGE_SIZEOF_SHORT_NAME);
+		_name[IMAGE_SIZEOF_SHORT_NAME] = 0;
+
 		if(name[0] == '/')
 		{
 			int off = strtol(name + 1, 0, 10);
