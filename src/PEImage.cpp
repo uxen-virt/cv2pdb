@@ -136,12 +136,10 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 {
 	// append new debug directory to data
 	IMAGE_DEBUG_DIRECTORY debugdir;
-	if(dbgDir)
-		debugdir = *dbgDir;
-	else
-		memset(&debugdir, 0, sizeof(debugdir));
 	int xdatalen = datalen + sizeof(debugdir);
 
+	memset(&debugdir, 0, sizeof(debugdir));
+	debugdir.Type = IMAGE_DEBUG_TYPE_CODEVIEW;
 	if (hdr64)
 		debugdir.TimeDateStamp = hdr64->FileHeader.TimeDateStamp;
 	else if (hdr32)
@@ -222,10 +220,6 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 	memset(newdata + dump_total_len, 0, fill);
 	memcpy(newdata + dump_total_len + fill, data, datalen);
 
-	if(!dbgDir)
-	{
-		debugdir.Type = 2;
-	}
 	dbgDir = (IMAGE_DEBUG_DIRECTORY*) (newdata + dump_total_len + fill + datalen);
 	memcpy(dbgDir, &debugdir, sizeof(debugdir));
 
