@@ -150,7 +150,6 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 	// assume there is place for another section because of section alignment
 	int s;
 	DWORD lastVirtualAddress = 0;
-    int firstDWARFsection = -1;
 	int cntSections = countSections();
 	for(s = 0; s < cntSections; s++)
 	{
@@ -160,10 +159,6 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 			int off = strtol(name + 1, 0, 10);
 			name = strtable + off;
 		}
-		if (strncmp (name, ".debug_", 7) != 0)
-			firstDWARFsection = -1;
-		else if (firstDWARFsection < 0)
-			firstDWARFsection = s;
 
 		if (strcmp (name, ".debug") == 0)
 		{
@@ -177,12 +172,7 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 		}
 		lastVirtualAddress = sec[s].VirtualAddress + sec[s].Misc.VirtualSize;
 	}
-    if (firstDWARFsection > 0)
-    {
-        s = firstDWARFsection;
-		dump_total_len = sec[s].PointerToRawData;
-		lastVirtualAddress = sec[s-1].VirtualAddress + sec[s-1].Misc.VirtualSize;
-    }
+
 	int align = IMGHDR(OptionalHeader.FileAlignment);
 	int align_len = xdatalen;
 	int fill = 0;
