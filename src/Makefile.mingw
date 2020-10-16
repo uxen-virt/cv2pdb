@@ -8,13 +8,16 @@ TARGET = cv2pdb
 
 all: $(TARGET)
 
+include Rules.mk
+
 #CC = x86_64-w64-mingw32-gcc
 #CXX = i686-w64-mingw32-g++
 CXX = x86_64-w64-mingw32-g++
 
 CXXFLAGS += -O3 -std=c++11 -g
 CXXFLAGS += -fno-strict-aliasing
-CXXFLAGS += -fno-devirtualize -fno-devirtualize-speculatively
+CXXFLAGS += -fno-devirtualize
+$(call cc-option-add,CXXFLAGS,CXX,-fno-devirtualize-speculatively)
 
 CXXFLAGS += -Wall -Werror
 
