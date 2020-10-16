@@ -136,7 +136,7 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 {
 	// append new debug directory to data
 	IMAGE_DEBUG_DIRECTORY debugdir;
-	int xdatalen = datalen + sizeof(debugdir);
+	unsigned int xdatalen = datalen + sizeof(debugdir);
 
 	memset(&debugdir, 0, sizeof(debugdir));
 	debugdir.Type = IMAGE_DEBUG_TYPE_CODEVIEW;
@@ -149,6 +149,12 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 	int s;
 	DWORD lastVirtualAddress = 0;
 	int cntSections = countSections();
+
+	DWORD debug_vaddr =
+		IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG]
+			   .VirtualAddress);
+	int debug_section = -1;
+
 	for(s = 0; s < cntSections; s++)
 	{
 		// NUL terminate name
@@ -163,78 +169,99 @@ bool PEImage::replaceDebugSection (const void* data, int datalen, bool initCV)
 			name = strtable + off;
 		}
 
-		if (strcmp (name, ".debug") == 0)
-		{
-			if (s == cntSections - 1)
+		if (sec[s].VirtualAddress <= debug_vaddr &&
+			debug_vaddr < sec[s].VirtualAddress + sec[s].VirtualAddress) {
+			if (xdatalen <= sec[s].SizeOfRawData)
 			{
-				dump_total_len = sec[s].PointerToRawData;
-				break;
+				debug_section = s;
 			}
-			strcpy ((char*) sec [s].Name, ".ddebug");
-			printf("warning: .debug not last section, cannot remove section\n");
 		}
-		lastVirtualAddress = sec[s].VirtualAddress + sec[s].Misc.VirtualSize;
+
+		if (lastVirtualAddress < sec[s].VirtualAddress + sec[s].Misc.VirtualSize)
+			lastVirtualAddress = sec[s].VirtualAddress + sec[s].Misc.VirtualSize;
 	}
 
-	int align = IMGHDR(OptionalHeader.FileAlignment);
-	int align_len = xdatalen;
-	int fill = 0;
-
-	if (align > 0)
-	{
-		fill = (align - (dump_total_len % align)) % align;
-		align_len = ((xdatalen + align - 1) / align) * align;
-	}
-	char* newdata = (char*) alloc_aligned(dump_total_len + fill + xdatalen, 0x1000);
-	if(!newdata)
-		return setError("cannot alloc new image");
+	int orig_total_len = dump_total_len;
 
 	int salign_len = xdatalen;
-	align = IMGHDR(OptionalHeader.SectionAlignment);
-	if (align > 0)
+	int salign = IMGHDR(OptionalHeader.SectionAlignment);
+	if (salign > 0)
 	{
-		lastVirtualAddress = ((lastVirtualAddress + align - 1) / align) * align;
-		salign_len = ((xdatalen + align - 1) / align) * align;
+		salign_len = ((xdatalen + salign - 1) / salign) * salign;
+		lastVirtualAddress =
+			((lastVirtualAddress + salign - 1) / salign) * salign;
 	}
 
-	strcpy((char*) sec[s].Name, ".debug");
-	sec[s].Misc.VirtualSize = align_len; // union with PhysicalAddress;
-	sec[s].VirtualAddress = lastVirtualAddress;
-	sec[s].SizeOfRawData = xdatalen;
-	sec[s].PointerToRawData = dump_total_len + fill;
+	if (debug_section >= 0)
+		s = debug_section;
+	else {
+		int fill = 0;
+		int align_len = xdatalen;
+		int falign = IMGHDR(OptionalHeader.FileAlignment);
+		if (falign > 0)
+		{
+			fill = (falign - (dump_total_len % falign)) % falign;
+			align_len = ((xdatalen + falign - 1) / falign) * falign;
+		}
+
+		sec[s].VirtualAddress = lastVirtualAddress;
+
+		dump_total_len += fill;
+		sec[s].PointerToRawData = dump_total_len;
+		sec[s].SizeOfRawData = align_len;
+		dump_total_len += align_len;
+
+		IMGHDR(FileHeader.NumberOfSections) = s + 1;
+	}
+
+	// always (re)name section .buildid, since strip will remove the
+	// section if it's named .debug
+	memcpy((char*) sec[s].Name, ".buildid", IMAGE_SIZEOF_SHORT_NAME);
+
+	if ((s + 1 == IMGHDR(FileHeader.NumberOfSections)) &&
+		(IMGHDR(OptionalHeader.SizeOfImage) <
+		 sec[s].VirtualAddress + salign_len))
+		IMGHDR(OptionalHeader.SizeOfImage) =
+			sec[s].VirtualAddress + salign_len;
+
+	sec[s].Misc.VirtualSize = xdatalen; // union with PhysicalAddress;
+
 	sec[s].PointerToRelocations = 0;
 	sec[s].PointerToLinenumbers = 0;
 	sec[s].NumberOfRelocations = 0;
 	sec[s].NumberOfLinenumbers = 0;
-	sec[s].Characteristics = IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_DISCARDABLE | IMAGE_SCN_CNT_INITIALIZED_DATA;
+	sec[s].Characteristics = IMAGE_SCN_MEM_READ |
+		IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_ALIGN_4BYTES;
 
-	IMGHDR(FileHeader.NumberOfSections) = s + 1;
-	// hdr->OptionalHeader.SizeOfImage += salign_len;
-	IMGHDR(OptionalHeader.SizeOfImage) = sec[s].VirtualAddress + salign_len;
+	IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG]
+		   .VirtualAddress) = sec[s].VirtualAddress + datalen;
+	IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG]
+		   .Size) = sizeof(IMAGE_DEBUG_DIRECTORY);
 
-	IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress) = lastVirtualAddress + datalen;
-	IMGHDR(OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].Size) = sizeof(IMAGE_DEBUG_DIRECTORY);
+	memset((char *)dump_base + sec[s].PointerToRawData, 0,
+		   sec[s].SizeOfRawData);
 
-	// append debug data chunk to existing file image
-	memcpy(newdata, dump_base, dump_total_len);
-	memset(newdata + dump_total_len, 0, fill);
-	memcpy(newdata + dump_total_len + fill, data, datalen);
+	debugdir.PointerToRawData = sec[s].PointerToRawData;
+	debugdir.AddressOfRawData = sec[s].VirtualAddress;
+	debugdir.SizeOfData = xdatalen;
 
-	dbgDir = (IMAGE_DEBUG_DIRECTORY*) (newdata + dump_total_len + fill + datalen);
+	dbgDir = (IMAGE_DEBUG_DIRECTORY*)
+		((char *)dump_base + sec[s].PointerToRawData + datalen);
 	memcpy(dbgDir, &debugdir, sizeof(debugdir));
 
-	dbgDir->PointerToRawData = sec[s].PointerToRawData;
-#if 0
-	dbgDir->AddressOfRawData = sec[s].PointerToRawData;
-	dbgDir->SizeOfData = sec[s].SizeOfRawData;
-#else // suggested by Z3N
-	dbgDir->AddressOfRawData = sec[s].VirtualAddress;
-	dbgDir->SizeOfData = sec[s].SizeOfRawData - sizeof(IMAGE_DEBUG_DIRECTORY);
-#endif
+	if (debug_section < 0) {
+		char* newdata = (char*) alloc_aligned(dump_total_len, 0x1000);
+		if(!newdata)
+			return setError("cannot alloc new image");
 
-	free_aligned(dump_base);
-	dump_base = newdata;
-	dump_total_len += fill + xdatalen;
+		// append debug data chunk to existing file image
+		memcpy(newdata, dump_base, orig_total_len);
+		memset(newdata + orig_total_len, 0, dump_total_len - orig_total_len);
+		memcpy(newdata + sec[s].PointerToRawData, data, datalen);
+
+		free_aligned(dump_base);
+		dump_base = newdata;
+	}
 
 	return !initCV || initCVPtr(false);
 }
